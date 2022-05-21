@@ -4,9 +4,10 @@
 * Vamsikrishna Madabhushi   mvamsik@csu.fullerton.edu
 * Ankur Prajapati           oneupankur@csu.fullerton.edu
 
-Languages used: Python
+## Languages used
+* Python
 
-How To Run:
+## How To Run
 1. Download the zip file of our final project from the Github or from the submission on Canvas
 2. open the folder in a python environment
 3. Run the Test.py file
