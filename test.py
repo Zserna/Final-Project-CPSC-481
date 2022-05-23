@@ -1,13 +1,72 @@
+from abc import ABC
+
+import pygame.draw
+
+import games
 from games import *
-import pygame
-import sys
+
+pygame.init()
+
+SQUARESIZE = 100
+GAME_OVER = False
+
+COLUMN_COUNT = 7
+ROW_COUNT = 6
+
+GAP_ROWS = 1
+
+WIDTH = COLUMN_COUNT * SQUARESIZE
+HEIGHT = (ROW_COUNT + GAP_ROWS) * SQUARESIZE
+
+SIZE = (WIDTH, HEIGHT)
+SCREEN = pygame.display.set_mode(SIZE)
 
 BLACK = (0, 0, 0)
 BLUE = (0, 0, 255)
 RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
 WHITE = (255, 255, 255)
-GREEN = (61, 145,64)
+GREEN = (61, 145, 64)
+
+RADIUS = SQUARESIZE // 3
+
+FONT = pygame.font.SysFont("verdana", 60)
+
+
+class Game(Game):
+    def play_test(self, player):
+        """Play an n-person, move-alternating game."""
+        state = self.initial
+        print(player)
+        while True:
+            if state.to_move == 'X':
+                move = player(self, state)
+                print("alpha_beta_move: ", move)
+                state = self.result(state, move)
+                if self.terminal_test(state):
+                    return self.utility(state, self.to_move(self.initial))
+            elif state.to_move == 'O':
+                self.draw_board(state)
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        sys.exit()
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        pos_mouse = event.pos
+                        print("x value:", pos_mouse[0])
+                        column_value = (pos_mouse[0] // SQUARESIZE) + 1
+                        print("column_click_in: ", column_value)
+                        for move in self.actions(state):
+                            if move[1] == column_value:
+                                print("Move is: ", move)
+                                break
+                        state = self.result(state, move)
+                        if self.terminal_test(state):
+                            return self.utility(state, self.to_move(self.initial))
+                    if event.type == pygame.MOUSEMOTION:
+                        pygame.draw.rect(SCREEN, BLACK, (0, 0, WIDTH, SQUARESIZE))
+                        slider_pos = event.pos[0]
+                        pygame.draw.circle(SCREEN, YELLOW, (slider_pos, SQUARESIZE // 2), RADIUS)
+            pygame.display.update()
 
 
 class TicTacToe(Game):
@@ -47,47 +106,12 @@ class TicTacToe(Game):
         """A state is terminal if it is won or there are no empty squares."""
         return state.utility != 0 or len(state.moves) == 0
 
-    def display(self, state, suggested_move = (10,10)):
+    def display(self, state):
         board = state.board
-        square_size = 100
-        gap_rows = 1
-        y_buffer = square_size * gap_rows
-        width = self.v * square_size
-        height = (self.h + gap_rows) * square_size
-        gui_board_size = (width, height)
-        screen = pygame.display.set_mode(gui_board_size)
-        screen.fill(WHITE)
-        radius = square_size // 3
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                sys.exit()
-            # filling blank row circles
-            for column in range(self.v):
-                #add 7 to call to remove top row
-                current_square_x, current_square_y = (column * square_size), 0
-                current_square_center = (
-                    current_square_x + (square_size // 2),
-                    current_square_y + (square_size // 2)
-                )
-                pygame.draw.circle(screen, BLACK, current_square_center, radius)
-            for column in range(self.v):
-                for row in range(self.h):
-                    current_square_x = column * square_size
-                    current_square_y = row * square_size + y_buffer
-                    current_square_center = (
-                        current_square_x + (square_size // 2),
-                        current_square_y + (square_size // 2)
-                    )
-                    pygame.draw.rect(screen, BLUE, (current_square_x, current_square_y, square_size, square_size), 2)
-                    if board.get((row + 1, column + 1)) == 'X':
-                        pygame.draw.circle(screen, RED, current_square_center, radius)
-                    elif board.get((row + 1, column + 1)) == 'O':
-                        pygame.draw.circle(screen, YELLOW, current_square_center, radius)
-                    elif row + 1 == suggested_move[0] and column + 1 == suggested_move[1]:
-                            pygame.draw.circle(screen, GREEN, current_square_center, radius)
-                    else:
-                        pygame.draw.circle(screen, BLACK, current_square_center, radius)
-            pygame.display.flip()
+        for x in range(1, self.h + 1):
+            for y in range(1, self.v + 1):
+                print(board.get((x, y), '.'), end=' ')
+            print()
 
     def compute_utility(self, board, move, player):
         """If 'X' wins with this move, return 1; if 'O' wins return -1; else return 0."""
@@ -126,6 +150,31 @@ class ConnectFour(TicTacToe):
     def actions(self, state):
         return [(x, y) for (x, y) in state.moves
                 if x == self.h or (x + 1, y) in state.board]
+
+    def draw_board(self, state):
+        board = state.board
+        y_buffer = SQUARESIZE * GAP_ROWS
+        suggested_move = alpha_beta_cutoff_player(self, state)
+        for column in range(self.v):
+            for row in range(self.h):
+                current_square_x = column * SQUARESIZE
+                current_square_y = row * SQUARESIZE + y_buffer
+                current_square_center = (
+                    current_square_x + (SQUARESIZE // 2),
+                    current_square_y + (SQUARESIZE // 2)
+                )
+                pygame.draw.rect(SCREEN, WHITE, (current_square_x, current_square_y, SQUARESIZE, SQUARESIZE))
+                pygame.draw.rect(SCREEN, BLUE, (current_square_x, current_square_y, SQUARESIZE, SQUARESIZE), 2)
+                if board.get((row + 1, column + 1)) == 'X':
+                    pygame.draw.circle(SCREEN, RED, current_square_center, RADIUS)
+                elif board.get((row + 1, column + 1)) == 'O':
+                    pygame.draw.circle(SCREEN, YELLOW, current_square_center, RADIUS)
+                elif row + 1 == suggested_move[0] and column + 1 == suggested_move[1]:
+                    pygame.draw.circle(SCREEN, GREEN, current_square_center, RADIUS)
+                else:
+                    pygame.draw.circle(SCREEN, BLACK, current_square_center, RADIUS)
+        pygame.display.flip()
+        pygame.display.update()
 
 
 def alpha_beta_cutoff_search(state, game, d=4, cutoff_test=None, eval_fn=None):
@@ -172,28 +221,6 @@ def alpha_beta_cutoff_search(state, game, d=4, cutoff_test=None, eval_fn=None):
     return best_action
 
 
-def query_player(game, state):
-    """Make a move by querying standard input."""
-    suggested_move = alpha_beta_cutoff_search(state, game, 4, None, evaluation_function)
-    print("current state:")
-    game.display(state, suggested_move)
-    print("available moves: {}".format(game.actions(state)))
-    #suggested_move = alpha_beta_cutoff_search(state, game, 4, None, evaluation_function)
-    print("suggested move (represented by green token): ", suggested_move)
-
-    print("")
-    move = None
-    if game.actions(state):
-        move_string = input('Your move? ')
-        try:
-            move = eval(move_string)
-        except NameError:
-            move = move_string
-    else:
-        print('no legal moves: passing turn to next player')
-    return move
-
-
 def evaluation_function(state):
     if state.to_move == 'X':
         other_player = 'O'
@@ -205,7 +232,7 @@ def evaluation_function(state):
     opp_fours = connect_count(state.board, other_player, 4)
     opp_threes = connect_count(state.board, other_player, 3)
     opp_twos = connect_count(state.board, other_player, 2)
-    return (fours * 100 + threes * 5 + twos * 2) - (opp_fours * 100 + opp_threes * 5 + opp_twos * 2)
+    return (fours * 10 + threes * 5 + twos * 2) - (opp_fours * 10 + opp_threes * 5 + opp_twos * 2)
 
 
 def connect_count(board, player, streak):
@@ -280,26 +307,25 @@ def alpha_beta_cutoff_player(game, state):
     return alpha_beta_cutoff_search(state, game, d=4, cutoff_test=None, eval_fn=evaluation_function)
 
 
-def play_game(self, *players):
-    """Play an n-person, move-alternating game."""
-    state = self.initial
-    while True:
-        for player in players:
-            move = player(self, state)
-            state = self.result(state, move)
-            if self.terminal_test(state):
-                self.display(state)
-                return self.utility(state, self.to_move(self.initial))
-
-
 if __name__ == "__main__":
-    pygame.init()
+    print(FONT)
     test = ConnectFour(6, 7, 4)
-
-    utility = test.play_game(alpha_beta_cutoff_player, query_player)  # computer moves first1
+    utility = test.play_test(alpha_beta_cutoff_player)  # computer moves first1
     if utility < 0:
-        print("MIN won the game")
+        label1 = FONT.render("Player Victory!", 1, YELLOW)
+        pygame.draw.rect(SCREEN,BLACK,(0,0,WIDTH,SQUARESIZE))
+        SCREEN.blit(label1, (40, 10))
+        pygame.display.update()
+        pygame.time.wait(900)
     elif utility > 0:
-        print("MAX won the game")
+        label2 = FONT.render("Computer Victory!", 1, RED)
+        pygame.draw.rect(SCREEN,BLACK,(0,0,WIDTH,SQUARESIZE))
+        SCREEN.blit(label2, (40, 10))
+        pygame.display.update()
+        pygame.time.wait(900)
     elif utility == 0:
-        print("Game is a tie.")
+        label3 = FONT.render("Game is tied", 1, WHITE)
+        pygame.draw.rect(SCREEN,BLACK,(0,0,WIDTH,SQUARESIZE))
+        SCREEN.blit(label3, (40, 10))
+        pygame.display.update()
+        pygame.time.wait(900)
