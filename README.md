@@ -7,6 +7,8 @@
 ## Languages used
 * Python
 
+![alt text](https://github.com/[Zserna]/[Final-Project-CPSC-481]/blob/Connect 4 Move Tutor EX.jpg?raw=true)
+
 ## How To Run
 1. Download the zip file of our final project from the Github or from the submission on Canvas
 2. open the folder in a python environment
