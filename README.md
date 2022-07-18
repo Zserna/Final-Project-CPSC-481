@@ -9,6 +9,8 @@
 
 ![alt text](https://github.com/Zserna/Final-Project-CPSC-481/blob/main/Connect4MoveTutorEX.JPG?raw=true)
 
+Test run of our Connect 4 Move Tutor. Green signifies the recommended move the tutor has suggested the player to take.
+
 ## How To Run
 1. Download the zip file of our final project from the Github or from the submission on Canvas
 2. open the folder in a python environment
